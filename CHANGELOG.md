@@ -2,6 +2,13 @@
 
 Versioner følger [Semantic Versioning](https://semver.org/). Datamodellens version (`CHARACTER_SCHEMA_VERSION`) står separat.
 
+## 0.4.0 — 2026-11-20
+
+### Ændret
+
+- Character-fanen: **Career** er nu en drop-down med karriererne fra din importerede regelbog (grupperet efter klasse; uden import vises navnelisten). **Career Path** er en drop-down med de fire niveauer for den valgte karriere og udfylder Career Tier og Status. Begge har "Other (type manually)…" til fri indtastning.
+- Career Tier og Career Path holdes i trit: vælger du niveau, opdateres Path og Status, når niveauerne kendes.
+
 ## 0.3.0 — 2026-11-20
 
 ### Tilføjet

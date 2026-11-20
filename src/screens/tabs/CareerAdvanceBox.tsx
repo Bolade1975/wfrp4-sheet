@@ -29,7 +29,8 @@ export function CareerAdvanceBox(props: { goTo: (t: TabKey) => void }) {
     return (
       <Panel title={`Career advancement — ${k.name}, level ${k.level}`} className="span-all">
         <Empty>
-          No level details for this career yet. Import your rulebook on the{' '}
+          No level details for this career. Pick a career from the list in the Career field, or
+          import your rulebook on the{' '}
           <button className="link" onClick={() => props.goTo('careers')}>
             Careers tab
           </button>

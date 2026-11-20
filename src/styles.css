@@ -407,6 +407,9 @@ main {
   gap: 10px 12px;
   align-items: end;
 }
+.fields.top {
+  align-items: start;
+}
 .fields.one {
   grid-template-columns: 1fr;
 }
@@ -431,7 +434,8 @@ main {
   gap: 3px;
   min-width: 0;
 }
-.field > span {
+.field > span,
+.combo-label {
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -1743,4 +1747,21 @@ button.stat-box {
 }
 .adv-list.plain li {
   min-height: 0;
+}
+
+/* ---------- combo (drop-down + manual entry) ---------- */
+.combo {
+  gap: 4px;
+}
+.combo .input {
+  margin-top: 2px;
+}
+.small-link {
+  align-self: flex-start;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.combo-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
 }

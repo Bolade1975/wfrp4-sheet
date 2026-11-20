@@ -3,6 +3,16 @@ import { useChar } from '../../state/store'
 import { Panel } from '../../ui/components'
 import { NumberField, Select, TextField } from '../../ui/fields'
 import type { TabKey } from '../tabKeys'
+import {
+  careerLevelsFor,
+  pickCareer,
+  pickLevel,
+  statusText,
+  typeCareer,
+} from '../../careers/advance'
+import { CAREER_CLASSES } from '../../careers/catalog'
+import { useCareerLibrary } from '../../careers/useCareerLibrary'
+import { ComboField, type ComboGroup } from '../../ui/ComboField'
 import { CareerAdvanceBox } from './CareerAdvanceBox'
 
 type Ident = Character['identity']
@@ -14,10 +24,27 @@ export function OverviewTab(props: { goTo: (t: TabKey) => void }) {
       x.identity[k] = v
     })
   const i = c.identity
+  const lib = useCareerLibrary()
+  // Career names: from the imported rulebook when available (grouped by Class).
+  const imported = new Set((lib?.careers ?? []).map((d) => d.name))
+  const careerGroups: ComboGroup[] = CAREER_CLASSES.map((cls) => ({
+    label: cls.name,
+    options: cls.careers
+      .filter((n) => !lib || imported.has(n))
+      .map((n) => ({ value: n, label: n })),
+  })).filter((g) => g.options.length > 0)
+  const pathGroups: ComboGroup[] = [
+    {
+      options: careerLevelsFor(c, lib).map((l, idx) => ({
+        value: l.title,
+        label: `${idx + 1}. ${l.title} — ${statusText(l)}`,
+      })),
+    },
+  ]
   return (
     <div className="grid two">
       <Panel title="Character" className="span-all">
-        <div className="fields">
+        <div className="fields top">
           <TextField
             label="Name"
             value={i.name}
@@ -46,11 +73,19 @@ export function OverviewTab(props: { goTo: (t: TabKey) => void }) {
             />
           )}
           <TextField label="Class" value={i.class} onChange={(v) => setI('class', v)} />
-          <TextField label="Career" value={i.career} onChange={(v) => setI('career', v)} />
+          <ComboField
+            label="Career"
+            value={i.career}
+            groups={careerGroups}
+            onPick={(v) => update((x) => pickCareer(x, v, lib))}
+            onType={(v) => update((x) => typeCareer(x, v, lib))}
+            placeholder="Career name"
+            {...(lib ? {} : { hint: 'Import your rulebook on the Careers tab for level titles.' })}
+          />
           <Select
             label="Career Tier (level)"
             value={i.careerLevel === null ? '' : String(i.careerLevel)}
-            onChange={(v) => setI('careerLevel', v === '' ? null : Number(v))}
+            onChange={(v) => update((x) => pickLevel(x, v === '' ? null : Number(v), lib))}
             options={[
               { value: '', label: '—' },
               { value: '1', label: '1' },
@@ -59,10 +94,18 @@ export function OverviewTab(props: { goTo: (t: TabKey) => void }) {
               { value: '4', label: '4' },
             ]}
           />
-          <TextField
+          <ComboField
+            key={`path-${i.career}`}
             label="Career Path (current level title)"
             value={i.careerPath}
-            onChange={(v) => setI('careerPath', v)}
+            groups={pathGroups}
+            onPick={(title) =>
+              update((x) =>
+                pickLevel(x, careerLevelsFor(x, lib).findIndex((l) => l.title === title) + 1, lib),
+              )
+            }
+            onType={(v) => setI('careerPath', v)}
+            placeholder="Level title"
             className="wide"
           />
           <Select

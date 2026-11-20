@@ -1,8 +1,10 @@
 import { makeSkill } from '../domain/factory'
+import { careerClass } from './catalog'
 import {
   CHAR_KEYS,
   type CareerData,
   type CareerLevel,
+  type CareerLibrary,
   type CharKey,
   type Character,
   type Skill,
@@ -168,4 +170,79 @@ const TIER = { brass: 'Brass', silver: 'Silver', gold: 'Gold' } as const
 
 export function statusText(l: CareerLevel): string {
   return `${TIER[l.statusTier]} ${l.statusStanding}`
+}
+
+/** Finds a career in the library by name (case-insensitive). */
+export function findCareer(lib: CareerLibrary | null | undefined, name: string) {
+  const n = name.trim().toLowerCase()
+  return lib?.careers.find((d) => d.name.toLowerCase() === n) ?? null
+}
+
+/** Career data to use for the character's current career: library first, then its own copy. */
+function currentSource(x: Character, lib: CareerLibrary | null | undefined): CareerData | null {
+  const fromLib = findCareer(lib, x.identity.career)
+  if (fromLib) return fromLib
+  if (x.career.name && x.career.name === x.identity.career && x.career.levels.length)
+    return {
+      name: x.career.name,
+      class: x.career.class,
+      page: 0,
+      levels: x.career.levels,
+      scheme: x.career.scheme,
+    }
+  return null
+}
+
+/** Career picked from the drop-down: keeps the current level (or starts at 1). */
+export function pickCareer(x: Character, name: string, lib: CareerLibrary | null | undefined) {
+  const d = findCareer(lib, name)
+  applyCareer(
+    x,
+    d ?? { name, class: careerClass(name) || x.identity.class },
+    x.identity.careerLevel ?? 1,
+  )
+}
+
+/** Career typed by hand. A name matching an imported career is linked to it. */
+export function typeCareer(x: Character, value: string, lib: CareerLibrary | null | undefined) {
+  const d = findCareer(lib, value)
+  if (d && value.trim().length === d.name.length) {
+    applyCareer(x, d, x.identity.careerLevel ?? 1)
+    return
+  }
+  x.identity.career = value
+  if (x.career.name !== value) {
+    x.career = {
+      name: value,
+      class: x.identity.class,
+      level: x.identity.careerLevel,
+      levels: [],
+      scheme: Object.fromEntries(CHAR_KEYS.map((k) => [k, 0])) as Record<CharKey, number>,
+    }
+    syncCareerMarks(x)
+  }
+}
+
+/** Career level (Tier) or Path chosen: fills Path and Status when the levels are known. */
+export function pickLevel(
+  x: Character,
+  level: number | null,
+  lib: CareerLibrary | null | undefined,
+) {
+  const src = currentSource(x, lib)
+  if (src && level !== null) {
+    applyCareer(x, src, level)
+    return
+  }
+  x.identity.careerLevel = level
+  x.career.level = level
+  syncCareerMarks(x)
+}
+
+/** The four level titles of the character's current career, if known. */
+export function careerLevelsFor(
+  x: Character,
+  lib: CareerLibrary | null | undefined,
+): CareerLevel[] {
+  return currentSource(x, lib)?.levels ?? []
 }
