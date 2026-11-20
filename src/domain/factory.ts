@@ -21,6 +21,7 @@ export function makeSkill(name: string, specialisation = '', patch: Partial<Skil
     grouped: cat?.grouped ?? false,
     advances: 0,
     inCareer: false,
+    race: false,
     favourite: false,
     notes: '',
     ...patch,

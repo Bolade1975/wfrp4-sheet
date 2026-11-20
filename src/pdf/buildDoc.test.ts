@@ -146,6 +146,13 @@ describe('PDF document', () => {
     expect(text).toMatch(/Not included:.*Current Loadout/)
   })
 
+  it('shows Career and Race skill marks and the wealth notes', () => {
+    const text = docText(exampleCharacter(), FULL)
+    expect(text).toContain('"Career"')
+    expect(text).toContain('"Race"')
+    expect(text).toContain('Owes Rudi 2 SS')
+  })
+
   it('marks manual values', () => {
     expect(docText(stressCharacter(), FULL)).toContain('Manual values')
   })

@@ -53,7 +53,10 @@ export const SkillSchema = z.object({
   type: z.enum(['basic', 'advanced']).default('basic'),
   grouped: bool,
   advances: int0,
+  /** Career skill (marked by the player). */
   inCareer: bool,
+  /** Race (species) skill (marked by the player). */
+  race: bool,
   favourite: bool,
   notes: str,
 })
@@ -238,7 +241,18 @@ export const CharacterSchema = z.object({
   weapons: z.array(WeaponSchema).default([]),
   armour: z.array(ArmourSchema).default([]),
   trappings: z.array(TrappingSchema).default([]),
-  wealth: z.object({ gc: num, ss: num, d: num }).prefault({}),
+  wealth: z
+    .object({
+      gc: num,
+      ss: num,
+      d: num,
+      /** Four short free-text lines in the Wealth box (debts, savings, notes …). */
+      notes: z
+        .array(z.string())
+        .default([])
+        .transform((a) => [0, 1, 2, 3].map((i) => a[i] ?? '')),
+    })
+    .prefault({}),
   /** Manual total AP per hit location (the rulebook gives no general stacking formula). */
   apTotals: z
     .object(Object.fromEntries(LOCATIONS.map((l) => [l, num])) as Record<Location, typeof num>)

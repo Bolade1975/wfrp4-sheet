@@ -70,6 +70,9 @@ export function exampleCharacter(): Character {
   const xbow = c.skills.find((s) => s.name === 'Ranged')!
   for (const s of c.skills)
     if (['Dodge', 'Cool', 'Melee', 'Ranged', 'Perception'].includes(s.name)) s.favourite = true
+  // Example only: skills the player marked as race (species) skills.
+  for (const s of c.skills)
+    if (['Charm', 'Cool', 'Perception', 'Haggle', 'Gossip'].includes(s.name)) s.race = true
 
   c.talents = [
     {
@@ -242,7 +245,12 @@ export function exampleCharacter(): Character {
       category: 'other',
     },
   ]
-  c.wealth = { gc: 0, ss: 3, d: 14 }
+  c.wealth = {
+    gc: 0,
+    ss: 3,
+    d: 14,
+    notes: ['Owes Rudi 2 SS', 'Back pay due in Ubersreik', '', ''],
+  }
   c.conditions = [{ id: newId(), name: 'Fatigued', count: 1, notes: 'From the forced march.' }]
   c.criticalWounds = []
   c.xp = {

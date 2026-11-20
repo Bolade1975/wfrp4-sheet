@@ -286,12 +286,13 @@ function skillsSection(c: Character): Content[] {
         {
           text: [
             { text: skillLabel(s) },
-            ...(s.inCareer ? [{ text: '  ●', color: C.brass }] : []),
             ...(s.notes ? [{ text: `\n${s.notes}`, fontSize: 7.5, color: C.muted }] : []),
           ],
         },
         { text: CHAR_LABELS[s.characteristic], alignment: 'center' },
         { text: s.type === 'advanced' ? 'Adv.' : 'Basic', fontSize: 7.5, color: C.muted },
+        { text: s.inCareer ? '●' : '', alignment: 'center', color: C.brass },
+        { text: s.race ? '●' : '', alignment: 'center', color: C.accent },
         { text: String(s.advances), alignment: 'center' },
         canTest(s) || d.overridden
           ? ({ ...(val(d) as object), alignment: 'center' } as TableCell)
@@ -302,14 +303,16 @@ function skillsSection(c: Character): Content[] {
     th('Name'),
     th('Char.', 'center'),
     th('Type'),
+    th('Career', 'center'),
+    th('Race', 'center'),
     th('Adv', 'center'),
     th('Skill', 'center'),
   ]
-  const widths = ['*', 34, 34, 28, 40]
+  const widths = ['*', 34, 34, 36, 30, 28, 40]
   return [
     h1('Skills'),
     {
-      text: '● = in current career · n/a = Advanced Skill without Advances (cannot be Tested, p. 118)',
+      text: '● = marked as Career or Race skill · n/a = Advanced Skill without Advances (cannot be Tested, p. 118)',
       fontSize: 7.5,
       color: C.muted,
       margin: [0, 0, 0, 4],
@@ -637,6 +640,7 @@ function inventorySection(c: Character): Content[] {
               ['GC', dash(c.wealth.gc)],
               ['SS', dash(c.wealth.ss)],
               ['D', dash(c.wealth.d)],
+              ...c.wealth.notes.filter((n) => n.trim()).map((n): [string, string] => ['Note', n]),
             ],
             [40, '*'],
           ),

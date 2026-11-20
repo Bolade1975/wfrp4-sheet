@@ -2,6 +2,16 @@
 
 Versioner følger [Semantic Versioning](https://semver.org/). Datamodellens version (`CHARACTER_SCHEMA_VERSION`) står separat.
 
+## 0.2.0 — 2026-11-20
+
+### Tilføjet
+
+- **Career** og **Race** markering ud for hver skill (to tryk-knapper i skill-rækken, også i Edit). Nyt filter "Race" på Skills-fanen. Markeringerne er til reference og ændrer ingen værdier.
+- **Wealth**-boksen har fire små notefelter (gæld, opsparing mv.). Udfyldte noter kommer med i PDF'en.
+- PDF: skill-tabellerne har kolonnerne Career og Race.
+
+Eksisterende karakterer indlæses uændret (nye felter er tomme/umarkerede).
+
 ## 0.1.0 — 2026-11-20
 
 Første version (datamodel v1). Ikke udgivet eller deployet.

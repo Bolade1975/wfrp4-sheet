@@ -14,7 +14,7 @@ import { useChar } from '../../state/store'
 import { Breakdown, ConfirmButton, Empty, OvrBadge, Panel, Sheet } from '../../ui/components'
 import { Check, NumberField, Segmented, Select, TextField } from '../../ui/fields'
 
-type Filter = 'all' | 'basic' | 'advanced' | 'career' | 'fav'
+type Filter = 'all' | 'basic' | 'advanced' | 'career' | 'race' | 'fav'
 type Sort = 'sheet' | 'name' | 'value'
 
 export function SkillsTab() {
@@ -42,6 +42,7 @@ export function SkillsTab() {
     if (filter === 'basic') return isSheetBasic(s)
     if (filter === 'advanced') return !isSheetBasic(s)
     if (filter === 'career') return s.inCareer
+    if (filter === 'race') return s.race
     if (filter === 'fav') return s.favourite
     return true
   })
@@ -63,7 +64,7 @@ export function SkillsTab() {
     <div className="stack">
       <Panel
         title="Skills"
-        hint="Skill = Characteristic + Advances (p. 47, 117). Basic Skills can be Tested with no Advances; Advanced Skills need at least one (p. 118). Grouped Skills: each Specialisation is its own row."
+        hint="Skill = Characteristic + Advances (p. 47, 117). Basic Skills can be Tested with no Advances; Advanced Skills need at least one (p. 118). Grouped Skills: each Specialisation is its own row. Tap Career / Race to mark a skill — the marks are for reference and change no values."
         actions={
           <button className="btn primary" onClick={() => setAdding(true)}>
             + Add skill
@@ -88,6 +89,7 @@ export function SkillsTab() {
               { value: 'basic', label: 'Basic' },
               { value: 'advanced', label: 'Grouped & Advanced' },
               { value: 'career', label: 'Career' },
+              { value: 'race', label: 'Race' },
               { value: 'fav', label: '★ Favourites' },
             ]}
           />
@@ -108,6 +110,7 @@ export function SkillsTab() {
             <span />
             <span>Name</span>
             <span>Char.</span>
+            <span>Career · Race</span>
             <span>Adv</span>
             <span>Skill</span>
             <span />
@@ -140,12 +143,31 @@ export function SkillsTab() {
                     <span className="tags">
                       {s.type === 'advanced' && <span className="badge">Advanced</span>}
                       {s.grouped && <span className="badge">Grouped</span>}
-                      {s.inCareer && <span className="badge career">Career</span>}
                     </span>
                     {s.notes && <span className="skill-note">{s.notes}</span>}
                   </span>
                   <span className="skill-char" title={CHAR_NAMES[s.characteristic]}>
                     {CHAR_LABELS[s.characteristic]}
+                  </span>
+                  <span className="skill-marks">
+                    <button
+                      type="button"
+                      className="mark career"
+                      aria-pressed={s.inCareer}
+                      aria-label={`Career skill: ${skillLabel(s)}`}
+                      onClick={() => setSkill(s.id, { inCareer: !s.inCareer })}
+                    >
+                      Career
+                    </button>
+                    <button
+                      type="button"
+                      className="mark race"
+                      aria-pressed={s.race}
+                      aria-label={`Race skill: ${skillLabel(s)}`}
+                      onClick={() => setSkill(s.id, { race: !s.race })}
+                    >
+                      Race
+                    </button>
                   </span>
                   <NumberField
                     hideLabel
@@ -212,9 +234,14 @@ export function SkillsTab() {
                         onChange={(v) => setSkill(s.id, { grouped: v })}
                       />
                       <Check
-                        label="In current career"
+                        label="Career skill"
                         checked={s.inCareer}
                         onChange={(v) => setSkill(s.id, { inCareer: v })}
+                      />
+                      <Check
+                        label="Race skill"
+                        checked={s.race}
+                        onChange={(v) => setSkill(s.id, { race: v })}
                       />
                       <TextField
                         label="Notes"

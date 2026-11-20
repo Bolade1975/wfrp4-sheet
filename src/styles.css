@@ -701,7 +701,7 @@ legend {
 }
 .skill-row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 54px 76px 78px 72px;
+  grid-template-columns: 40px minmax(0, 1fr) 46px 158px 70px 74px 64px;
   gap: 8px;
   align-items: center;
   padding: 6px 0;
@@ -780,17 +780,60 @@ legend {
 .skill-edit {
   padding-top: 6px;
 }
-@media (max-width: 600px) {
+.skill-marks {
+  display: flex;
+  gap: 4px;
+}
+.mark {
+  flex: 1;
+  min-height: 40px;
+  padding: 2px 6px;
+  border: 1px dashed var(--line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--faint);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mark.career[aria-pressed='true'] {
+  border: 1px solid var(--brass);
+  background: var(--brass-soft);
+  color: var(--brass);
+}
+.mark.race[aria-pressed='true'] {
+  border: 1px solid var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+@media (max-width: 760px) {
   .skill-row {
     grid-template-columns: 34px minmax(0, 1fr) 40px 64px 66px;
+    grid-auto-flow: dense;
+  }
+  .skill-row > .skill-marks {
+    grid-column: 2 / 4;
+    grid-row: 2;
   }
   .skill-row > :last-child {
-    grid-column: 2 / -1;
-    justify-self: start;
+    grid-column: 4 / -1;
+    grid-row: 2;
   }
+  .skill-row.head > :nth-child(4),
   .skill-row.head > :last-child {
     display: none;
   }
+}
+.wealth-notes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin-top: 10px;
+}
+.input.small {
+  min-height: 40px;
+  padding: 5px 8px;
+  font-size: 0.92rem;
 }
 .pick-list {
   display: flex;

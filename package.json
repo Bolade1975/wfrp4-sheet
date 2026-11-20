@@ -1,6 +1,6 @@
 {
   "name": "wfrp4-sheet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Offline Warhammer Fantasy Roleplay 4th Edition character sheet PWA with GM PDF export.",
   "private": true,
   "type": "module",

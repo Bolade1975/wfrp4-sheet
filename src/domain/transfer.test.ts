@@ -40,6 +40,19 @@ describe('import / export', () => {
       expect(r.character.characteristics.bs.initial).toBeNull()
     }
   })
+  it('older saves without Race marks or wealth notes still load', () => {
+    const r = migrateCharacter({
+      id: 'x',
+      skills: [{ id: 's', name: 'Cool', characteristic: 'wp' }],
+      wealth: { gc: 1 },
+    })
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.character.skills[0]!.race).toBe(false)
+      expect(r.character.wealth.notes).toEqual(['', '', '', ''])
+      expect(r.character.wealth.gc).toBe(1)
+    }
+  })
   it('refuses data from a newer app version', () => {
     expect(migrateCharacter({ id: 'x', schemaVersion: 99 }).ok).toBe(false)
   })
