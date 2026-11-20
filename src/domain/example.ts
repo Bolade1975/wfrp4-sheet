@@ -1,5 +1,6 @@
+import { parseQualityText } from '../weapons/qualities'
 import { makeSkill, newCharacter, newId } from './factory'
-import type { Character } from './schema'
+import type { Character, Weapon } from './schema'
 
 /**
  * An invented example character for trying out the app. Clearly marked as
@@ -96,7 +97,7 @@ export function exampleCharacter(): Character {
   ]
   c.psychology = [{ id: newId(), name: 'Animosity (Beastmen)', description: 'Example entry.' }]
 
-  c.weapons = [
+  const weaponRows: Omit<Weapon, 'twoHanded' | 'qualityTags'>[] = [
     {
       id: newId(),
       kind: 'melee',
@@ -162,6 +163,10 @@ export function exampleCharacter(): Character {
       ammo: '',
     },
   ]
+  c.weapons = weaponRows.map((w) => {
+    const { tags, rest } = parseQualityText(w.qualities)
+    return { ...w, twoHanded: false, qualityTags: tags, qualities: rest }
+  })
   c.armour = [
     {
       id: newId(),

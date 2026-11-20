@@ -2,6 +2,22 @@
 
 Versioner følger [Semantic Versioning](https://semver.org/). Datamodellens version (`CHARACTER_SCHEMA_VERSION`) står separat.
 
+## 0.5.0 — 2026-11-20
+
+Datamodel v1 → v2 (automatisk migrering; intet går tabt).
+
+### Tilføjet
+
+- **Våben fra regelbogen:** i Inventory vælges et våben i en drop-down (grupperet som i bogens tabeller, fx Melee — Polearm). Type, gruppe, 2H, reach/range, damage, Enc og Qualities & Flaws udfyldes, og attack skill kobles, hvis karakteren har den matchende Melee/Ranged-specialisering. Alt kan rettes bagefter, og man kan stadig skrive sit eget våben.
+- **Qualities & Flaws som afkrydsning:** alle 20 qualities og 6 flaws fra s. 297–299 kan krydses af pr. våben (med rating for Blast, Repeater, Shield og Reload). Beskrivelsen af hver afkrydset quality vises under listen.
+- **Combat og Current Loadout:** våben markeret Current viser deres qualities som chips (grøn = quality, rød = flaw); tryk for at læse, hvad de gør.
+- Importen fra din egen PDF læser nu hele bogen: karrierer, våbentabeller og beskrivelser af qualities/flaws i ét. Data gemmes kun på enheden og i fuld backup.
+
+### Ændret
+
+- Eksisterende våben: kendte qualities i tekstfeltet bliver til afkrydsninger; resten bliver stående i feltet "Other qualities".
+- Bedre mellemrum i tekst læst fra PDF'en (ord med fed skrift midt i en linje).
+
 ## 0.4.0 — 2026-11-20
 
 ### Ændret

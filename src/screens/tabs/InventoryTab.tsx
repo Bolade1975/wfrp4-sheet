@@ -6,12 +6,20 @@ import { LOCATION_LABEL, locationsText } from '../../ui/labels'
 import { Check, NumberField } from '../../ui/fields'
 import { ItemList } from '../../ui/ItemList'
 import { fmtNum } from '../../ui/format'
+import { useCareerLibraryState, useWeaponLibraryState } from '../../careers/useCareerLibrary'
+import { qualityInfo } from '../../weapons/fromRef'
+import { weaponQualitiesText } from '../../weapons/qualities'
+import { QualityPicker, WeaponPicker } from '../../weapons/WeaponParts'
+import { RulebookImport } from '../RulebookImport'
 
 const itemDefaults = { quantity: 1, enc: null, location: '', current: true, notes: '' }
 
 export function InventoryTab() {
   const { c, update } = useChar()
   const enc = encumbrance(c)
+  const [weapons, setWeapons] = useWeaponLibraryState()
+  const [careers, setCareers] = useCareerLibraryState()
+  const info = qualityInfo(weapons)
   const skillOptions = [
     { value: '', label: '— not linked —' },
     ...c.skills.map((s) => ({ value: s.id, label: skillLabel(s) })),
@@ -24,7 +32,20 @@ export function InventoryTab() {
         are typed in by you from the book; the app adds none.
       </p>
 
-      <Panel title="Weapons">
+      {weapons === null && (
+        <RulebookImport
+          focus="weapons"
+          careers={careers}
+          weapons={weapons}
+          onCareers={setCareers}
+          onWeapons={setWeapons}
+        />
+      )}
+
+      <Panel
+        title="Weapons"
+        hint="Open a weapon and pick it from the rulebook list, or type your own. Tick its Qualities and Flaws — the ticked ones are shown with what they do on the Combat tab when the weapon is Current."
+      >
         <ItemList<Weapon>
           items={c.weapons}
           onChange={(v) => update((x) => void (x.weapons = v))}
@@ -34,21 +55,31 @@ export function InventoryTab() {
           title={(w) => w.name || 'Unnamed weapon'}
           columns={[
             { label: 'Damage', get: (w) => w.damage || '—' },
+            { label: 'Qualities', get: (w) => weaponQualitiesText(w) || '—' },
             { label: 'Enc', get: (w) => fmtNum(w.enc) },
           ]}
+          header={(w, set) => <WeaponPicker w={w} c={c} lib={weapons} set={set} />}
+          extra={(w, set) => (
+            <QualityPicker
+              tags={w.qualityTags}
+              info={info}
+              onChange={(qualityTags) => set({ qualityTags })}
+            />
+          )}
           make={() => ({
             ...itemDefaults,
             name: '',
             kind: 'melee',
             group: '',
+            twoHanded: false,
             rangeReach: '',
             damage: '',
+            qualityTags: [],
             qualities: '',
             skillId: null,
             ammo: '',
           })}
           fields={[
-            { key: 'name', label: 'Name', type: 'text' },
             {
               key: 'kind',
               label: 'Type',
@@ -68,7 +99,13 @@ export function InventoryTab() {
               options: skillOptions,
               nullable: true,
             },
-            { key: 'qualities', label: 'Qualities & Flaws', type: 'text', full: true },
+            { key: 'twoHanded', label: 'Two-handed (2H)', type: 'bool' },
+            {
+              key: 'qualities',
+              label: 'Other qualities (not in the list) / notes on qualities',
+              type: 'text',
+              full: true,
+            },
             { key: 'enc', label: 'Enc', type: 'num' },
             { key: 'quantity', label: 'Quantity', type: 'int' },
             { key: 'location', label: 'Carried where / slot', type: 'text' },

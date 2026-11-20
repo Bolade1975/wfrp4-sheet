@@ -1,4 +1,5 @@
 import type { Content, TableCell, TDocumentDefinitions } from 'pdfmake/interfaces'
+import { weaponQualitiesText } from '../weapons/qualities'
 import { careerLine, displayName, speciesLabel, statusLabel } from '../domain/factory'
 import { CHAR_KEYS, LOCATIONS, type Character, type Weapon } from '../domain/schema'
 import { HIT_LOCATIONS } from '../rules/catalog'
@@ -415,7 +416,7 @@ function weaponRows(c: Character, ws: Weapon[], withLocation: boolean): TableCel
             alignment: 'center',
           } as TableCell)
         : { text: '—', alignment: 'center', color: C.muted },
-      { text: dash(w.qualities) },
+      { text: dash(weaponQualitiesText(w)) },
     ]
   })
 }

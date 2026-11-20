@@ -184,6 +184,8 @@ describe('weapon damage (p. 293–294)', () => {
     group: '',
     rangeReach: '',
     damage,
+    twoHanded: false,
+    qualityTags: [],
     qualities: '',
     skillId: null,
     ammo: '',

@@ -1,3 +1,4 @@
+import { parseQualityText } from '../weapons/qualities'
 import { CharacterSchema, CHARACTER_SCHEMA_VERSION, type Character } from './schema'
 
 /**
@@ -8,7 +9,23 @@ import { CharacterSchema, CHARACTER_SCHEMA_VERSION, type Character } from './sch
  */
 type Raw = Record<string, unknown>
 
-const STEPS: Record<number, (raw: Raw) => Raw> = {}
+const STEPS: Record<number, (raw: Raw) => Raw> = {
+  // v1 → v2: weapon "Qualities and Flaws" text becomes ticked quality tags.
+  // Known names (with ratings) move to qualityTags; anything unrecognised
+  // stays in the free-text field, so nothing is lost.
+  1: (raw) => {
+    const weapons = Array.isArray(raw.weapons) ? (raw.weapons as unknown[]) : []
+    return {
+      ...raw,
+      weapons: weapons.map((w) => {
+        if (!isObj(w) || typeof w.qualities !== 'string' || Array.isArray(w.qualityTags)) return w
+        const { tags, rest } = parseQualityText(w.qualities)
+        return { ...w, qualityTags: tags, qualities: rest }
+      }),
+      schemaVersion: 2,
+    }
+  },
+}
 
 function isObj(v: unknown): v is Raw {
   return typeof v === 'object' && v !== null && !Array.isArray(v)

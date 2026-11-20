@@ -1,15 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { applyCareer, statusText, syncCareerMarks } from '../../careers/advance'
 import { CAREER_CLASSES } from '../../careers/catalog'
-import { parseCareers } from '../../careers/parse'
-import { deleteCareerLibrary, getCareerLibrary, saveCareerLibrary } from '../../db/db'
-import { nowIso } from '../../domain/factory'
-import {
-  CHAR_KEYS,
-  type CareerData,
-  type CareerLevel,
-  type CareerLibrary,
-} from '../../domain/schema'
+import { useCareerLibraryState, useWeaponLibraryState } from '../../careers/useCareerLibrary'
+import { saveCareerLibrary } from '../../db/db'
+import { RulebookImport } from '../RulebookImport'
+import { CHAR_KEYS, type CareerLevel, type CareerLibrary } from '../../domain/schema'
 import { CHAR_LABELS, CHAR_NAMES } from '../../rules/engine'
 import { useChar } from '../../state/store'
 import { ConfirmButton, Empty, Panel } from '../../ui/components'
@@ -17,17 +12,10 @@ import type { TabKey } from '../tabKeys'
 
 export function CareersTab(props: { goTo: (t: TabKey) => void }) {
   const { c, update } = useChar()
-  const [lib, setLib] = useState<CareerLibrary | null | undefined>(undefined)
+  const [lib, setLib] = useCareerLibraryState()
+  const [weapons, setWeapons] = useWeaponLibraryState()
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<string | null>(c.career.name || null)
-
-  useEffect(() => {
-    let alive = true
-    void getCareerLibrary().then((l) => alive && setLib(l))
-    return () => {
-      alive = false
-    }
-  }, [])
 
   const byName = new Map((lib?.careers ?? []).map((x) => [x.name, x]))
   const n = q.trim().toLowerCase()
@@ -39,7 +27,13 @@ export function CareersTab(props: { goTo: (t: TabKey) => void }) {
     <div className="stack">
       <CurrentCareer goTo={props.goTo} onSchemeSaved={(l) => setLib(l)} lib={lib ?? null} />
 
-      <ImportPanel lib={lib} onChange={setLib} />
+      <RulebookImport
+        focus="careers"
+        careers={lib}
+        weapons={weapons}
+        onCareers={setLib}
+        onWeapons={setWeapons}
+      />
 
       <Panel
         title="All careers"
@@ -268,120 +262,4 @@ function CurrentCareer(props: {
       </div>
     </Panel>
   )
-}
-
-function ImportPanel(props: {
-  lib: CareerLibrary | null | undefined
-  onChange: (l: CareerLibrary | null) => void
-}) {
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string; problems: string[] } | null>(null)
-
-  const onFile = async (file: File) => {
-    setMsg(null)
-    setBusy('Opening the PDF…')
-    try {
-      const { readCareerPages } = await import('../../careers/importPdf')
-      const pages = await readCareerPages(file, (d, t) => setBusy(`Reading page ${d} of ${t}…`))
-      const r = parseCareers(pages)
-      if (r.careers.length === 0) {
-        setMsg({
-          ok: false,
-          text: 'No careers were found. Is this the WFRP 4th Edition Core Rulebook PDF?',
-          problems: r.problems,
-        })
-        return
-      }
-      const lib: CareerLibrary = {
-        importedAt: nowIso(),
-        source: file.name,
-        careers: mergeSchemes(r.careers, props.lib ?? null),
-      }
-      await saveCareerLibrary(lib)
-      props.onChange(lib)
-      setMsg({
-        ok: r.problems.length === 0,
-        text: `Imported ${r.careers.length} careers from ${file.name}.`,
-        problems: r.problems,
-      })
-    } catch (e) {
-      setMsg({
-        ok: false,
-        text: `Import failed: ${e instanceof Error ? e.message : String(e)}`,
-        problems: [],
-      })
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  return (
-    <Panel
-      title="Career data from your rulebook"
-      hint="Career details come from your own copy of the WFRP 4e Core Rulebook. The PDF is read in this browser; nothing is uploaded, and the data is stored only on this device (and in your full backup)."
-    >
-      {props.lib === undefined ? (
-        <div className="hint">Loading…</div>
-      ) : props.lib ? (
-        <div className="banner ok">
-          {props.lib.careers.length} careers imported from <b>{props.lib.source}</b> on{' '}
-          {new Date(props.lib.importedAt).toLocaleDateString()}.
-        </div>
-      ) : (
-        <div className="banner info">
-          Not imported yet. Choose your Core Rulebook PDF to fill in levels, status, skills, talents
-          and trappings. On a tablet you can instead restore a full backup made on a device where
-          you imported it.
-        </div>
-      )}
-      <div className="row" style={{ marginTop: 10 }}>
-        <button className="btn primary" disabled={!!busy} onClick={() => fileRef.current?.click()}>
-          {props.lib ? 'Import again from PDF…' : 'Import from my rulebook PDF…'}
-        </button>
-        {props.lib && (
-          <ConfirmButton
-            label="Remove career data"
-            onConfirm={() => void deleteCareerLibrary().then(() => props.onChange(null))}
-          />
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/pdf,.pdf"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            e.target.value = ''
-            if (f) void onFile(f)
-          }}
-        />
-      </div>
-      {busy && <p className="hint">{busy}</p>}
-      {msg && (
-        <div className={`banner ${msg.ok ? 'ok' : 'warn'}`} style={{ marginTop: 10 }}>
-          {msg.text}
-          {msg.problems.length > 0 && (
-            <ul>
-              {msg.problems.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </Panel>
-  )
-}
-
-/** Keeps advance-scheme levels 2–4 the player already set when re-importing. */
-function mergeSchemes(next: CareerData[], prev: CareerLibrary | null): CareerData[] {
-  if (!prev) return next
-  return next.map((d) => {
-    const old = prev.careers.find((o) => o.name === d.name)
-    if (!old) return d
-    const scheme = { ...d.scheme }
-    for (const k of CHAR_KEYS) if (old.scheme[k] > 1 && scheme[k] === 0) scheme[k] = old.scheme[k]
-    return { ...d, scheme }
-  })
 }

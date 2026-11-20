@@ -13,18 +13,19 @@ import { ALL_CAREERS } from './catalog'
  * - "Career Path", then four "<Title> — <Tier> <Standing>" lines, each
  *   followed by "Skills:", "Talents:" and "Trappings:" lists that may wrap.
  */
-export type PdfTextItem = { str: string; x: number; y: number }
+/** One positioned text run; width (in PDF units) when the extractor knows it. */
+export type PdfTextItem = { str: string; x: number; y: number; w?: number }
 export type PdfPage = { page: number; width: number; items: PdfTextItem[] }
 
 export type { CareerData } from '../domain/schema'
 type CareerLevelData = CareerLevel
 
-type Line = { y: number; x: number; text: string }
+export type Line = { y: number; x: number; text: string }
 
 const TITLE_RE = /^(?:h\s+)?(.+?)\s*[—–]+\s*(Brass|Silver|Gold)\s+(\d+)\s*$/
 const FIELD_RE = /^(Skills|Talents|Trappings):\s*(.*)$/
 
-function lines(items: PdfTextItem[]): Line[] {
+export function lines(items: PdfTextItem[]): Line[] {
   const sorted = [...items]
     .filter((i) => i.str.trim() !== '')
     .sort((a, b) => b.y - a.y || a.x - b.x)
@@ -39,10 +40,16 @@ function lines(items: PdfTextItem[]): Line[] {
     let text = ''
     let prevEnd = -Infinity
     for (const i of its) {
-      // Small-caps headings are split into fragments with no gap: join them tightly.
+      // Use the real run width when known (inline bold words sit right after a
+      // space-less run); otherwise estimate. Small-caps fragments have no gap.
       const gap = i.x - prevEnd
-      text += text && gap > 3 ? ' ' + i.str : i.str
-      prevEnd = i.x + i.str.length * 4.2
+      const needsSpace =
+        text !== '' &&
+        !/s$/.test(text) &&
+        !/^[s,.;:)]/.test(i.str) &&
+        gap > (i.w !== undefined ? 0.8 : 3)
+      text += needsSpace ? ' ' + i.str : i.str
+      prevEnd = i.x + (i.w ?? i.str.length * 4.2)
     }
     return { y: l.y, x: its[0]!.x, text: text.replace(/\s+/g, ' ').trim() }
   })
@@ -65,7 +72,7 @@ export function splitList(s: string): string[] {
   return out.map((x) => x.replace(/\s+/g, ' ').replace(/\.$/, '').trim()).filter(Boolean)
 }
 
-function norm(s: string): string {
+export function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z]/g, '')
 }
 

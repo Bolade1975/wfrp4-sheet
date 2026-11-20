@@ -6,7 +6,7 @@ import { z } from 'zod'
  * between "zero" and "missing". Calculated values are never stored; only
  * inputs and explicit manual overrides are.
  */
-export const CHARACTER_SCHEMA_VERSION = 1
+export const CHARACTER_SCHEMA_VERSION = 2
 
 export const CHAR_KEYS = ['ws', 'bs', 's', 't', 'i', 'ag', 'dex', 'int', 'wp', 'fel'] as const
 export type CharKey = (typeof CHAR_KEYS)[number]
@@ -109,13 +109,23 @@ const itemBase = {
   notes: str,
 }
 
+/** A Weapon Quality or Flaw ticked on a weapon, e.g. Shield with rating 2. */
+export const QualityTagSchema = z.object({
+  name: z.string(),
+  rating: z.number().int().nullable().default(null),
+})
+
 export const WeaponSchema = z.object({
   ...itemBase,
   kind: z.enum(['melee', 'ranged']).default('melee'),
   group: str,
+  twoHanded: bool,
   rangeReach: str,
   /** As printed, e.g. "+SB+4" or "+8". */
   damage: str,
+  /** Qualities and Flaws ticked from the list. */
+  qualityTags: z.array(QualityTagSchema).default([]),
+  /** Anything else (supplement qualities, notes on qualities). */
   qualities: str,
   /** Skill used to attack with this weapon (id into skills). */
   skillId: z.string().nullable().default(null),
@@ -195,6 +205,39 @@ export const NoteSchema = z.object({
   body: str,
   date: str,
 })
+
+/** A weapon row from the player's own rulebook (weapon tables, p. 294–295). */
+export const WeaponRefSchema = z.object({
+  name: z.string(),
+  kind: z.enum(['melee', 'ranged']),
+  group: str,
+  twoHanded: bool,
+  price: str,
+  enc: str,
+  availability: str,
+  reachRange: str,
+  damage: str,
+  qualities: z.array(z.string()).default([]),
+  /** Marked with * in the table (see the table's footnotes). */
+  footnote: bool,
+})
+export type WeaponRef = z.infer<typeof WeaponRefSchema>
+
+/** A Weapon Quality or Flaw description from the player's own rulebook (p. 297–299). */
+export const QualityRefSchema = z.object({
+  name: z.string(),
+  kind: z.enum(['quality', 'flaw']),
+  description: str,
+})
+export type QualityRef = z.infer<typeof QualityRefSchema>
+
+export const WeaponLibrarySchema = z.object({
+  importedAt: str,
+  source: str,
+  weapons: z.array(WeaponRefSchema).default([]),
+  qualities: z.array(QualityRefSchema).default([]),
+})
+export type WeaponLibrary = z.infer<typeof WeaponLibrarySchema>
 
 /** One level of a career, as read from the player's own rulebook PDF. */
 export const CareerLevelSchema = z.object({

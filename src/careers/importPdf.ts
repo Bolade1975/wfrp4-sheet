@@ -22,9 +22,14 @@ export async function extractPages(
     const page = await doc.getPage(n)
     const width = page.getViewport({ scale: 1 }).width
     const tc = await page.getTextContent()
-    const items = (tc.items as { str?: string; transform?: number[] }[])
+    const items = (tc.items as { str?: string; transform?: number[]; width?: number }[])
       .filter((i) => typeof i.str === 'string' && Array.isArray(i.transform))
-      .map((i) => ({ str: i.str!, x: i.transform![4]!, y: i.transform![5]! }))
+      .map((i) => ({
+        str: i.str!,
+        x: i.transform![4]!,
+        y: i.transform![5]!,
+        ...(typeof i.width === 'number' ? { w: i.width } : {}),
+      }))
     out.push({ page: n, width, items })
     onProgress?.(n - from + 1, last - from + 1)
   }
@@ -32,10 +37,10 @@ export async function extractPages(
 }
 
 /**
- * Browser entry point: reads a PDF the player picked, scanning the first 150
- * pages (Chapter 3 is around p. 50–120). pdf.js is loaded on demand.
+ * Browser entry point: reads every page of the PDF the player picked
+ * (careers, weapon tables and qualities). pdf.js is loaded on demand.
  */
-export async function readCareerPages(
+export async function readRulebookPages(
   file: File,
   onProgress?: (done: number, total: number) => void,
 ): Promise<PdfPage[]> {
@@ -45,5 +50,5 @@ export async function readCareerPages(
   const data = new Uint8Array(await file.arrayBuffer())
   const doc = (await pdfjs.getDocument({ data, disableFontFace: true })
     .promise) as unknown as PdfDoc
-  return extractPages(doc, 1, Math.min(150, doc.numPages), onProgress)
+  return extractPages(doc, 1, doc.numPages, onProgress)
 }

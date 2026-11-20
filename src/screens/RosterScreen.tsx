@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   deleteCharacter,
   getCareerLibrary,
+  getWeaponLibrary,
   saveCareerLibrary,
+  saveWeaponLibrary,
   listCharacters,
   saveCharacter,
   saveMany,
@@ -18,7 +20,7 @@ import {
   speciesLabel,
   statusLabel,
 } from '../domain/factory'
-import type { CareerLibrary, Character } from '../domain/schema'
+import type { CareerLibrary, Character, WeaponLibrary } from '../domain/schema'
 import {
   exportBackup,
   exportCharacter,
@@ -43,6 +45,8 @@ export function RosterScreen(props: { open: (id: string) => void }) {
     warnings: string[]
     library: CareerLibrary | null
     importLibrary: boolean
+    weapons: WeaponLibrary | null
+    importWeapons: boolean
   } | null>(null)
   const [renaming, setRenaming] = useState<Character | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -93,7 +97,10 @@ export function RosterScreen(props: { open: (id: string) => void }) {
       return
     }
     const existingLib = parsed.value.careerLibrary ? await getCareerLibrary() : null
+    const existingWeapons = parsed.value.weaponLibrary ? await getWeaponLibrary() : null
     setPlan({
+      weapons: parsed.value.weaponLibrary,
+      importWeapons: !!parsed.value.weaponLibrary && !existingWeapons,
       items: planImport(parsed.value.characters, chars),
       warnings: parsed.value.errors,
       library: parsed.value.careerLibrary,
@@ -217,8 +224,8 @@ export function RosterScreen(props: { open: (id: string) => void }) {
               className="btn"
               disabled={chars.length === 0}
               onClick={() =>
-                void getCareerLibrary().then((lib) =>
-                  downloadJson(`wfrp4-backup-${todayIso()}.json`, exportBackup(chars, lib)),
+                void Promise.all([getCareerLibrary(), getWeaponLibrary()]).then(([lib, wl]) =>
+                  downloadJson(`wfrp4-backup-${todayIso()}.json`, exportBackup(chars, lib, wl)),
                 )
               }
             >
@@ -286,6 +293,15 @@ export function RosterScreen(props: { open: (id: string) => void }) {
                 />
               </div>
             )}
+            {plan.weapons && (
+              <div className="panel">
+                <Check
+                  label={`Import the weapon library (${plan.weapons.weapons.length} weapons and ${plan.weapons.qualities.length} quality descriptions from your rulebook) — replaces any on this device`}
+                  checked={plan.importWeapons}
+                  onChange={(v) => setPlan({ ...plan, importWeapons: v })}
+                />
+              </div>
+            )}
             {plan.items.map((item, i) => (
               <div className="panel" key={item.incoming.id + i}>
                 <div className="row">
@@ -338,6 +354,7 @@ export function RosterScreen(props: { open: (id: string) => void }) {
                     const toWrite = resolveImport(plan.items)
                     await saveMany(toWrite)
                     if (plan.library && plan.importLibrary) await saveCareerLibrary(plan.library)
+                    if (plan.weapons && plan.importWeapons) await saveWeaponLibrary(plan.weapons)
                     setPlan(null)
                   }, 'Import complete.')
                 }

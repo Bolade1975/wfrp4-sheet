@@ -1,6 +1,12 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { migrateCharacter } from '../domain/migrations'
-import { CareerLibrarySchema, type CareerLibrary, type Character } from '../domain/schema'
+import {
+  CareerLibrarySchema,
+  WeaponLibrarySchema,
+  type CareerLibrary,
+  type Character,
+  type WeaponLibrary,
+} from '../domain/schema'
 
 /**
  * Local IndexedDB storage (own database name — separate from other apps on
@@ -94,4 +100,22 @@ export async function saveCareerLibrary(lib: CareerLibrary, database: SheetDb = 
 
 export async function deleteCareerLibrary(database: SheetDb = db): Promise<void> {
   await database.meta.delete(LIBRARY_KEY)
+}
+
+const WEAPON_KEY = 'weaponLibrary'
+
+/** Weapons and quality descriptions imported from the player's own rulebook (null if none). */
+export async function getWeaponLibrary(database: SheetDb = db): Promise<WeaponLibrary | null> {
+  const row = await database.meta.get(WEAPON_KEY)
+  if (!row) return null
+  const r = WeaponLibrarySchema.safeParse(row.value)
+  return r.success ? r.data : null
+}
+
+export async function saveWeaponLibrary(lib: WeaponLibrary, database: SheetDb = db): Promise<void> {
+  await database.meta.put({ key: WEAPON_KEY, value: lib })
+}
+
+export async function deleteWeaponLibrary(database: SheetDb = db): Promise<void> {
+  await database.meta.delete(WEAPON_KEY)
 }

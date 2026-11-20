@@ -1,6 +1,12 @@
 import { newId, nowIso } from './factory'
 import { migrateCharacter } from './migrations'
-import { CareerLibrarySchema, type CareerLibrary, type Character } from './schema'
+import {
+  CareerLibrarySchema,
+  WeaponLibrarySchema,
+  type CareerLibrary,
+  type Character,
+  type WeaponLibrary,
+} from './schema'
 
 /** JSON export/import formats (for the player's own backups — never sent anywhere). */
 export const CHARACTER_FORMAT = 'wfrp4-sheet/character'
@@ -20,6 +26,8 @@ export type BackupFile = {
   characters: Character[]
   /** Career library imported from the player's own rulebook (optional). */
   careerLibrary?: CareerLibrary
+  /** Weapons and quality descriptions imported from the player's own rulebook (optional). */
+  weaponLibrary?: WeaponLibrary
 }
 
 export function exportCharacter(c: Character): CharacterFile {
@@ -31,13 +39,18 @@ export function exportCharacter(c: Character): CharacterFile {
   }
 }
 
-export function exportBackup(cs: Character[], careerLibrary?: CareerLibrary | null): BackupFile {
+export function exportBackup(
+  cs: Character[],
+  careerLibrary?: CareerLibrary | null,
+  weaponLibrary?: WeaponLibrary | null,
+): BackupFile {
   return {
     format: BACKUP_FORMAT,
     formatVersion: TRANSFER_VERSION,
     exportedAt: nowIso(),
     characters: cs,
     ...(careerLibrary ? { careerLibrary } : {}),
+    ...(weaponLibrary ? { weaponLibrary } : {}),
   }
 }
 
@@ -48,6 +61,8 @@ export type ParsedImport = {
   errors: string[]
   /** Career library carried by a full backup, if any (validated). */
   careerLibrary: CareerLibrary | null
+  /** Weapon library carried by a full backup, if any (validated). */
+  weaponLibrary: WeaponLibrary | null
 }
 
 /** Parses and fully validates an import file. Nothing is written here. */
@@ -69,7 +84,13 @@ export function parseImport(
     if (!r.ok) return { ok: false, error: r.error }
     return {
       ok: true,
-      value: { kind: 'character', characters: [r.character], errors: [], careerLibrary: null },
+      value: {
+        kind: 'character',
+        characters: [r.character],
+        errors: [],
+        careerLibrary: null,
+        weaponLibrary: null,
+      },
     }
   }
   if (d.format === BACKUP_FORMAT) {
@@ -87,9 +108,15 @@ export function parseImport(
       if (lib.success) careerLibrary = lib.data
       else errors.push('Career library in the backup is invalid and was skipped.')
     }
-    if (characters.length === 0 && !careerLibrary)
+    let weaponLibrary: WeaponLibrary | null = null
+    if (d.weaponLibrary !== undefined) {
+      const lib = WeaponLibrarySchema.safeParse(d.weaponLibrary)
+      if (lib.success) weaponLibrary = lib.data
+      else errors.push('Weapon library in the backup is invalid and was skipped.')
+    }
+    if (characters.length === 0 && !careerLibrary && !weaponLibrary)
       return { ok: false, error: errors[0] ?? 'Backup is empty.' }
-    return { ok: true, value: { kind: 'backup', characters, errors, careerLibrary } }
+    return { ok: true, value: { kind: 'backup', characters, errors, careerLibrary, weaponLibrary } }
   }
   return { ok: false, error: 'This is not a WFRP4 Sheet export or backup file.' }
 }

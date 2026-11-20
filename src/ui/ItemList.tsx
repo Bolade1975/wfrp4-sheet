@@ -35,6 +35,8 @@ export function ItemList<T extends { id: string }>(props: {
   columns?: Column<T>[]
   addLabel?: string
   extra?: (item: T, set: (patch: Partial<T>) => void) => ReactNode
+  /** Rendered above the fields of an open item. */
+  header?: (item: T, set: (patch: Partial<T>) => void) => ReactNode
   emptyText?: string
   /** Show a "Current" toggle per row (items must have a boolean `current`). */
   current?: boolean
@@ -81,6 +83,7 @@ export function ItemList<T extends { id: string }>(props: {
             </div>
             {open && (
               <div className="item-body stack">
+                {props.header?.(it, (patch) => set(it.id, patch))}
                 <div className="fields">
                   {props.fields.map((f) => (
                     <FieldEditor

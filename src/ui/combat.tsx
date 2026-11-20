@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useWeaponLibraryState } from '../careers/useCareerLibrary'
+import { qualityInfo, type QualityInfo } from '../weapons/fromRef'
+import { QualityChips } from '../weapons/WeaponParts'
 import type { Location, Weapon } from '../domain/schema'
 import { HIT_LOCATIONS } from '../rules/catalog'
 import { canTest, skillLabel, weaponDamage, weaponSkill, weaponTest } from '../rules/engine'
@@ -7,7 +10,11 @@ import { Breakdown, Empty, OvrBadge, Sheet } from './components'
 import { NumberField } from './fields'
 
 /** One weapon with its verified test value (linked skill) and resolved damage. */
-export function WeaponLine(props: { w: Weapon; showLocation?: boolean | undefined }) {
+export function WeaponLine(props: {
+  w: Weapon
+  info: QualityInfo
+  showLocation?: boolean | undefined
+}) {
   const { c } = useChar()
   const { w } = props
   const [open, setOpen] = useState(false)
@@ -58,12 +65,7 @@ export function WeaponLine(props: { w: Weapon; showLocation?: boolean | undefine
             <span className="missing">needs {dmg.missing.join(', ')}</span>
           )}
         </div>
-        {w.qualities && (
-          <div className="stat-box wide">
-            <span className="lbl">Qualities &amp; Flaws</span>
-            <span>{w.qualities}</span>
-          </div>
-        )}
+
         {(w.ammo || (props.showLocation && w.location)) && (
           <div className="stat-box wide">
             <span className="lbl">{w.ammo ? 'Ammunition' : 'Carried'}</span>
@@ -73,6 +75,7 @@ export function WeaponLine(props: { w: Weapon; showLocation?: boolean | undefine
           </div>
         )}
       </div>
+      <QualityChips w={w} info={props.info} />
       {w.notes && <div className="hint">{w.notes}</div>}
       {open && test && (
         <Sheet title={`${w.name} — attack Test`} onClose={() => setOpen(false)}>
@@ -91,11 +94,13 @@ export function WeaponList(props: {
   empty: string
   showLocation?: boolean | undefined
 }) {
+  const [lib] = useWeaponLibraryState()
   if (props.weapons.length === 0) return <Empty>{props.empty}</Empty>
+  const info = qualityInfo(lib)
   return (
     <div className="weapons">
       {props.weapons.map((w) => (
-        <WeaponLine key={w.id} w={w} showLocation={props.showLocation} />
+        <WeaponLine key={w.id} w={w} info={info} showLocation={props.showLocation} />
       ))}
     </div>
   )
