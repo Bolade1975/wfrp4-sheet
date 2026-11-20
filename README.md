@@ -2,6 +2,8 @@
 
 Offline karakterark til **Warhammer Fantasy Roleplay 4th Edition** — optimeret til tablet i portrait og landscape. Ingen backend, login eller cloud: alt gemmes lokalt i browserens IndexedDB. PDF til GM genereres på enheden.
 
+**Åbn appen:** https://bolade1975.github.io/wfrp4-sheet/ — intet skal installeres på pc'en.
+
 > Brugerfladen er på engelsk med de officielle WFRP 4e-termer. Layoutet følger det officielle karakterarks opbygning (Cubicle 7), men er en selvstændig brugerflade uden kopieret grafik eller regeltekst. Appen er et karakterark til eksisterende karakterer — ikke en character builder.
 
 ## Faner
@@ -70,7 +72,13 @@ npm run preview    # server den byggede app lokalt (PWA aktiv)
 
 ## Installér som app (PWA)
 
-Projektet er klar til GitHub Pages (`.github/workflows/deploy.yml`, relativ `base`), men er **ikke** pushet eller deployet. Når det er hostet: åbn adressen i Chrome/Samsung Internet, vent til siden er indlæst én gang, og vælg **Installer app** / **Føj til startskærm**. Herefter virker alt offline, også PDF.
+Appen ligger på GitHub Pages: https://bolade1975.github.io/wfrp4-sheet/ — den bruges direkte i browseren, og der skal ikke installeres noget på pc'en.
+
+På tablet (valgfrit): åbn adressen i Chrome/Samsung Internet, vent til siden er indlæst én gang, og vælg **Installer app** / **Føj til startskærm**. Herefter virker alt offline, også PDF.
+
+## Deploy til GitHub Pages
+
+Repository: https://github.com/Bolade1975/wfrp4-sheet (Settings → Pages → Source: GitHub Actions). Hvert push til `master` kører typecheck, lint, format-check, tests og build og deployer derefter (`.github/workflows/deploy.yml`). Appen bruger relativ `base`, så den virker under `/wfrp4-sheet/`.
 
 Karakterdata kommer aldrig i repositoryet; `.gitignore` udelukker `*.wfrp4.json`, `wfrp4-backup-*.json` og `*.pdf`.
 
