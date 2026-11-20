@@ -1,6 +1,6 @@
 import { newId, nowIso } from './factory'
 import { migrateCharacter } from './migrations'
-import type { Character } from './schema'
+import { CareerLibrarySchema, type CareerLibrary, type Character } from './schema'
 
 /** JSON export/import formats (for the player's own backups — never sent anywhere). */
 export const CHARACTER_FORMAT = 'wfrp4-sheet/character'
@@ -18,6 +18,8 @@ export type BackupFile = {
   formatVersion: number
   exportedAt: string
   characters: Character[]
+  /** Career library imported from the player's own rulebook (optional). */
+  careerLibrary?: CareerLibrary
 }
 
 export function exportCharacter(c: Character): CharacterFile {
@@ -29,12 +31,13 @@ export function exportCharacter(c: Character): CharacterFile {
   }
 }
 
-export function exportBackup(cs: Character[]): BackupFile {
+export function exportBackup(cs: Character[], careerLibrary?: CareerLibrary | null): BackupFile {
   return {
     format: BACKUP_FORMAT,
     formatVersion: TRANSFER_VERSION,
     exportedAt: nowIso(),
     characters: cs,
+    ...(careerLibrary ? { careerLibrary } : {}),
   }
 }
 
@@ -43,6 +46,8 @@ export type ParsedImport = {
   characters: Character[]
   /** Per-entry problems; entries listed here were NOT included. */
   errors: string[]
+  /** Career library carried by a full backup, if any (validated). */
+  careerLibrary: CareerLibrary | null
 }
 
 /** Parses and fully validates an import file. Nothing is written here. */
@@ -62,7 +67,10 @@ export function parseImport(
   if (d.format === CHARACTER_FORMAT) {
     const r = migrateCharacter(d.character)
     if (!r.ok) return { ok: false, error: r.error }
-    return { ok: true, value: { kind: 'character', characters: [r.character], errors: [] } }
+    return {
+      ok: true,
+      value: { kind: 'character', characters: [r.character], errors: [], careerLibrary: null },
+    }
   }
   if (d.format === BACKUP_FORMAT) {
     if (!Array.isArray(d.characters)) return { ok: false, error: 'Backup has no character list.' }
@@ -73,8 +81,15 @@ export function parseImport(
       if (r.ok) characters.push(r.character)
       else errors.push(`Entry ${i + 1}: ${r.error}`)
     })
-    if (characters.length === 0) return { ok: false, error: errors[0] ?? 'Backup is empty.' }
-    return { ok: true, value: { kind: 'backup', characters, errors } }
+    let careerLibrary: CareerLibrary | null = null
+    if (d.careerLibrary !== undefined) {
+      const lib = CareerLibrarySchema.safeParse(d.careerLibrary)
+      if (lib.success) careerLibrary = lib.data
+      else errors.push('Career library in the backup is invalid and was skipped.')
+    }
+    if (characters.length === 0 && !careerLibrary)
+      return { ok: false, error: errors[0] ?? 'Backup is empty.' }
+    return { ok: true, value: { kind: 'backup', characters, errors, careerLibrary } }
   }
   return { ok: false, error: 'This is not a WFRP4 Sheet export or backup file.' }
 }

@@ -196,6 +196,40 @@ export const NoteSchema = z.object({
   date: str,
 })
 
+/** One level of a career, as read from the player's own rulebook PDF. */
+export const CareerLevelSchema = z.object({
+  title: str,
+  statusTier: z.enum(['brass', 'silver', 'gold']).default('brass'),
+  statusStanding: z.number().int().default(0),
+  skills: z.array(z.string()).default([]),
+  talents: z.array(z.string()).default([]),
+  trappings: z.array(z.string()).default([]),
+})
+export type CareerLevel = z.infer<typeof CareerLevelSchema>
+
+const schemeShape = Object.fromEntries(
+  CHAR_KEYS.map((k) => [k, z.number().int().min(0).max(4).default(0)]),
+) as unknown as Record<CharKey, z.ZodDefault<z.ZodNumber>>
+
+/** Level (1–4) at which each Characteristic enters the advance scheme; 0 = not in scheme / not set. */
+export const SchemeSchema = z.object(schemeShape).prefault({})
+
+export const CareerDataSchema = z.object({
+  name: z.string(),
+  class: str,
+  page: z.number().int().default(0),
+  levels: z.array(CareerLevelSchema).default([]),
+  scheme: SchemeSchema,
+})
+export type CareerData = z.infer<typeof CareerDataSchema>
+
+export const CareerLibrarySchema = z.object({
+  importedAt: str,
+  source: str,
+  careers: z.array(CareerDataSchema).default([]),
+})
+export type CareerLibrary = z.infer<typeof CareerLibrarySchema>
+
 export const CharacterSchema = z.object({
   id,
   schemaVersion: z.number().int().default(CHARACTER_SCHEMA_VERSION),
@@ -271,6 +305,19 @@ export const CharacterSchema = z.object({
     .prefault({}),
   quickTests: z.array(QuickTestSchema).default([]),
   notes: z.array(NoteSchema).default([]),
+  /**
+   * Current career and level ("Path"). A copy of the career's data is kept on
+   * the character so the sheet works on devices without the career library.
+   */
+  career: z
+    .object({
+      name: str,
+      class: str,
+      level: z.number().int().min(1).max(4).nullable().default(null),
+      levels: z.array(CareerLevelSchema).default([]),
+      scheme: SchemeSchema,
+    })
+    .prefault({}),
   /** Manual overrides of calculated values, keyed by derived-value id. */
   overrides: z.record(z.string(), z.number()).default({}),
 })

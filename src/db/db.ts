@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { migrateCharacter } from '../domain/migrations'
-import type { Character } from '../domain/schema'
+import { CareerLibrarySchema, type CareerLibrary, type Character } from '../domain/schema'
 
 /**
  * Local IndexedDB storage (own database name — separate from other apps on
@@ -15,11 +15,16 @@ export type CharacterRow = {
   data: unknown
 }
 
+/** Device-wide data that is not part of one character (e.g. the career library). */
+export type MetaRow = { key: string; value: unknown }
+
 export class SheetDb extends Dexie {
   characters!: EntityTable<CharacterRow, 'id'>
+  meta!: EntityTable<MetaRow, 'key'>
   constructor(name = 'wfrp4-character-sheet') {
     super(name)
     this.version(1).stores({ characters: 'id, name, updatedAt' })
+    this.version(2).stores({ characters: 'id, name, updatedAt', meta: 'key' })
   }
 }
 
@@ -71,4 +76,22 @@ export async function requestPersistence(): Promise<boolean> {
     /* unsupported */
   }
   return false
+}
+
+const LIBRARY_KEY = 'careerLibrary'
+
+/** The career library imported from the player's own rulebook PDF (null if none). */
+export async function getCareerLibrary(database: SheetDb = db): Promise<CareerLibrary | null> {
+  const row = await database.meta.get(LIBRARY_KEY)
+  if (!row) return null
+  const r = CareerLibrarySchema.safeParse(row.value)
+  return r.success ? r.data : null
+}
+
+export async function saveCareerLibrary(lib: CareerLibrary, database: SheetDb = db): Promise<void> {
+  await database.meta.put({ key: LIBRARY_KEY, value: lib })
+}
+
+export async function deleteCareerLibrary(database: SheetDb = db): Promise<void> {
+  await database.meta.delete(LIBRARY_KEY)
 }

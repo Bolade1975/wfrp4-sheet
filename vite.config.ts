@@ -21,7 +21,7 @@ export default defineConfig({
         // pdfmake + embedded fonts form a multi-MB chunk; it must be precached
         // so PDF export works offline after the first load.
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'],
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff,woff2}'],
       },
       manifest: {
         id: './',

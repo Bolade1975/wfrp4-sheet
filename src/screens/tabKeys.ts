@@ -3,6 +3,7 @@ export const TAB_KEYS = [
   'loadout',
   'tests',
   'character',
+  'careers',
   'characteristics',
   'skills',
   'talents',

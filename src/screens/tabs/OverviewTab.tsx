@@ -2,10 +2,12 @@ import type { Character } from '../../domain/schema'
 import { useChar } from '../../state/store'
 import { Panel } from '../../ui/components'
 import { NumberField, Select, TextField } from '../../ui/fields'
+import type { TabKey } from '../tabKeys'
+import { CareerAdvanceBox } from './CareerAdvanceBox'
 
 type Ident = Character['identity']
 
-export function OverviewTab() {
+export function OverviewTab(props: { goTo: (t: TabKey) => void }) {
   const { c, update } = useChar()
   const setI = <K extends keyof Ident>(k: K, v: Ident[K]) =>
     update((x) => {
@@ -91,6 +93,8 @@ export function OverviewTab() {
           </p>
         )}
       </Panel>
+
+      <CareerAdvanceBox goTo={props.goTo} />
 
       <Panel title="Ambitions">
         <div className="fields one">

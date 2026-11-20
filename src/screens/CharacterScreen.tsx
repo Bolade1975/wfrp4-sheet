@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { careerLine, displayName, speciesLabel, statusLabel } from '../domain/factory'
 import { CharacterContext, useCharacterStore, type SaveStatus } from '../state/store'
 import { type TabKey } from './tabKeys'
+import { CareersTab } from './tabs/CareersTab'
 import { CharacteristicsTab } from './tabs/CharacteristicsTab'
 import { CombatTab } from './tabs/CombatTab'
 import { ExportTab } from './tabs/ExportTab'
@@ -20,6 +21,7 @@ const TABS: { key: TabKey; label: string; play?: boolean }[] = [
   { key: 'loadout', label: 'Current Loadout', play: true },
   { key: 'tests', label: 'Tests', play: true },
   { key: 'character', label: 'Character' },
+  { key: 'careers', label: 'Careers' },
   { key: 'characteristics', label: 'Characteristics' },
   { key: 'skills', label: 'Skills' },
   { key: 'talents', label: 'Talents & Traits' },
@@ -111,7 +113,8 @@ export function CharacterScreen(props: {
         {props.tab === 'combat' && <CombatTab goTo={props.setTab} />}
         {props.tab === 'loadout' && <LoadoutTab goTo={props.setTab} />}
         {props.tab === 'tests' && <TestsTab />}
-        {props.tab === 'character' && <OverviewTab />}
+        {props.tab === 'character' && <OverviewTab goTo={props.setTab} />}
+        {props.tab === 'careers' && <CareersTab goTo={props.setTab} />}
         {props.tab === 'characteristics' && <CharacteristicsTab />}
         {props.tab === 'skills' && <SkillsTab />}
         {props.tab === 'talents' && <TalentsTab />}

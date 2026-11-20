@@ -178,7 +178,7 @@ export function InventoryTab() {
       </Panel>
 
       <div className="grid two">
-        <Panel title="Wealth">
+        <Panel title="Wealth" className="wealth-panel">
           <div className="fields three-col">
             <NumberField
               label="GC (Gold Crowns)"
@@ -198,9 +198,9 @@ export function InventoryTab() {
           </div>
           <div className="wealth-notes">
             {c.wealth.notes.map((n, i) => (
-              <input
+              <textarea
                 key={i}
-                className="input small"
+                className="textarea wealth-note"
                 value={n}
                 placeholder={`Note ${i + 1}`}
                 aria-label={`Wealth note ${i + 1}`}

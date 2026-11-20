@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   deleteCharacter,
+  getCareerLibrary,
+  saveCareerLibrary,
   listCharacters,
   saveCharacter,
   saveMany,
@@ -16,7 +18,7 @@ import {
   speciesLabel,
   statusLabel,
 } from '../domain/factory'
-import type { Character } from '../domain/schema'
+import type { CareerLibrary, Character } from '../domain/schema'
 import {
   exportBackup,
   exportCharacter,
@@ -29,14 +31,19 @@ import {
 } from '../domain/transfer'
 import { ConfirmButton, Panel, Sheet } from '../ui/components'
 import { downloadJson } from '../ui/download'
-import { TextField } from '../ui/fields'
+import { Check, TextField } from '../ui/fields'
 import { todayIso } from '../ui/format'
 
 export function RosterScreen(props: { open: (id: string) => void }) {
   const [rows, setRows] = useState<LoadedCharacter[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [plan, setPlan] = useState<{ items: ImportPlanItem[]; warnings: string[] } | null>(null)
+  const [plan, setPlan] = useState<{
+    items: ImportPlanItem[]
+    warnings: string[]
+    library: CareerLibrary | null
+    importLibrary: boolean
+  } | null>(null)
   const [renaming, setRenaming] = useState<Character | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -85,7 +92,13 @@ export function RosterScreen(props: { open: (id: string) => void }) {
       setError(`Import rejected: ${parsed.error} Nothing was changed.`)
       return
     }
-    setPlan({ items: planImport(parsed.value.characters, chars), warnings: parsed.value.errors })
+    const existingLib = parsed.value.careerLibrary ? await getCareerLibrary() : null
+    setPlan({
+      items: planImport(parsed.value.characters, chars),
+      warnings: parsed.value.errors,
+      library: parsed.value.careerLibrary,
+      importLibrary: !!parsed.value.careerLibrary && !existingLib,
+    })
   }
 
   return (
@@ -203,7 +216,11 @@ export function RosterScreen(props: { open: (id: string) => void }) {
             <button
               className="btn"
               disabled={chars.length === 0}
-              onClick={() => downloadJson(`wfrp4-backup-${todayIso()}.json`, exportBackup(chars))}
+              onClick={() =>
+                void getCareerLibrary().then((lib) =>
+                  downloadJson(`wfrp4-backup-${todayIso()}.json`, exportBackup(chars, lib)),
+                )
+              }
             >
               Download full backup
             </button>
@@ -260,6 +277,15 @@ export function RosterScreen(props: { open: (id: string) => void }) {
                 </ul>
               </div>
             )}
+            {plan.library && (
+              <div className="panel">
+                <Check
+                  label={`Import the career library (${plan.library.careers.length} careers from your rulebook) — replaces any library on this device`}
+                  checked={plan.importLibrary}
+                  onChange={(v) => setPlan({ ...plan, importLibrary: v })}
+                />
+              </div>
+            )}
             {plan.items.map((item, i) => (
               <div className="panel" key={item.incoming.id + i}>
                 <div className="row">
@@ -311,6 +337,7 @@ export function RosterScreen(props: { open: (id: string) => void }) {
                   void run(async () => {
                     const toWrite = resolveImport(plan.items)
                     await saveMany(toWrite)
+                    if (plan.library && plan.importLibrary) await saveCareerLibrary(plan.library)
                     setPlan(null)
                   }, 'Import complete.')
                 }
